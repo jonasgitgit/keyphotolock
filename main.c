@@ -6,47 +6,35 @@
 #include <unistd.h>
 
 int main(void){
-  struct input_event  {
-    struct timeval time;
-    unsigned short type; 
-    unsigned short code; 
-    unsigned int value;   
-  };
 
-
-//  char filename[L_tmpnam + 1];
- // tmpnam(filename);
   struct input_event ev;
   const char *dev= "/dev/input/by-path/platform-i8042-serio-0-event-kbd";
   const char *photo = "ffmpeg -f v4l2 -i /dev/video0 -ss 00:00:02 -frames:v 1 $(tr -dc A-Za-z0-9 </dev/urandom | head -c 5).jpg &> /dev/null";
   const char *lock = "slock";
   ssize_t n;
-  char take_a_picture[strlen(photo) + 1];
-  
+  char take_a_picture[strlen(photo) + 1]; 
   int open_event_kbd;
+
   open_event_kbd = open(dev, O_RDONLY);
 
   if (open_event_kbd == -1){
     return EXIT_FAILURE;
-  }
+  }    
   else{
     puts("keyphotolock running...");
   }
 
   while (1) {
     n = read(open_event_kbd, &ev, sizeof ev);
+    if (n == 0) fprintf(stderr, "fail open\n");
     if (ev.type == EV_KEY && ev.value == 1){
-      if (system(photo) != 0){
-        fprintf(stderr, "fail picture\n");
-      }
-      if (system(lock) !=0){
-        fprintf(stderr, "fail lock\n");
-      }
+      if (system(take_a_picture) != 0) fprintf(stderr, "fail picture\n");
+      if (system(lock) !=0) fprintf(stderr, "fail lock\n");
     }
-      if (ev.value == 1){
+    if (ev.value == 1){
         break;
-      }
     }
+  }
 
   close(open_event_kbd);
   fflush(stdout);
